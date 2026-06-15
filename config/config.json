@@ -1,0 +1,12 @@
+{
+  "aiProvider": "openrouter",
+  "openrouter": {
+    "apiKey": "PASTE_API_KEY_HERE",
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "model": "openai/gpt-4o-mini"
+  },
+  "local": {
+    "baseUrl": "http://localhost:11434/v1",
+    "model": "qwen2.5:7b"
+  }
+}
