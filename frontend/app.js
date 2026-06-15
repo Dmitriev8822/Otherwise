@@ -6,10 +6,14 @@ const hintEl = document.querySelector('#hint');
 const statsEl = document.querySelector('#stats');
 const historyEl = document.querySelector('#history');
 const newWordBtn = document.querySelector('#new-word-btn');
+const timerEl = document.querySelector('#timer');
 const checkBtn = document.querySelector('#check-btn');
 const hintBtn = document.querySelector('#hint-btn');
 
 let currentWord = '';
+let pendingWord = '';
+let timerId = null;
+const TIMER_SECONDS = 5;
 
 function setMessage(text, type = '') {
   messageEl.textContent = text;
@@ -35,14 +39,58 @@ async function api(path, options = {}) {
   return data;
 }
 
+function setTaskControlsEnabled(isEnabled) {
+  checkBtn.disabled = !isEnabled;
+  hintBtn.disabled = !isEnabled;
+  ideasInput.disabled = !isEnabled;
+}
+
+function stopTimer() {
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+}
+
+function startWordTimer(word) {
+  stopTimer();
+  currentWord = '';
+  pendingWord = word;
+  let secondsLeft = TIMER_SECONDS;
+
+  currentWordEl.textContent = '???';
+  timerEl.textContent = `Слово появится через ${secondsLeft} сек.`;
+  setTaskControlsEnabled(false);
+
+  timerId = setInterval(() => {
+    secondsLeft -= 1;
+
+    if (secondsLeft <= 0) {
+      stopTimer();
+      currentWord = pendingWord;
+      pendingWord = '';
+      currentWordEl.textContent = currentWord;
+      timerEl.textContent = 'Таймер завершён — можно вводить идеи.';
+      setTaskControlsEnabled(true);
+      setMessage('');
+      return;
+    }
+
+    timerEl.textContent = `Слово появится через ${secondsLeft} сек.`;
+  }, 1000);
+}
+
 async function loadWord() {
+  stopTimer();
+  setTaskControlsEnabled(false);
   setMessage('Загружаем слово...');
+  currentWordEl.textContent = '—';
+  timerEl.textContent = 'Готовим таймер...';
   const data = await api('/api/word');
-  currentWord = data.word;
-  currentWordEl.textContent = currentWord;
   resultEl.classList.add('hidden');
   hintEl.classList.add('hidden');
-  setMessage('');
+  startWordTimer(data.word);
+  setMessage('Таймер запущен. Слово пока скрыто.');
 }
 
 function escapeHtml(value) {
@@ -104,7 +152,7 @@ async function refreshDashboard() {
 async function checkIdeas() {
   const ideas = ideasFromInput();
   if (!currentWord) {
-    setMessage('Сначала получите слово.', 'error');
+    setMessage('Дождитесь окончания таймера и появления слова.', 'error');
     return;
   }
   if (ideas.length < 3) {
@@ -131,7 +179,7 @@ async function checkIdeas() {
 
 async function requestHint() {
   if (!currentWord) {
-    setMessage('Сначала получите слово.', 'error');
+    setMessage('Дождитесь окончания таймера и появления слова.', 'error');
     return;
   }
 
