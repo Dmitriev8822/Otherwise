@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
 const { evaluateIdeas, getHint } = require('./ai');
+const { runAiDiagnostics } = require('./ai/diagnostics');
 const { addAttempt, getHistory, getStats } = require('./db/jsonDb');
 
 const app = express();
@@ -84,6 +85,14 @@ app.get('/api/history', async (_req, res, next) => {
 app.get('/api/stats', async (_req, res, next) => {
   try {
     res.json(await getStats());
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/ai/diagnostics', async (_req, res, next) => {
+  try {
+    res.json(await runAiDiagnostics());
   } catch (error) {
     next(error);
   }

@@ -17,9 +17,14 @@ function loadConfig() {
 }
 
 function safeEvaluation(word, ideas) {
-  const variety = new Set(ideas.map((idea) => idea.split(/\s+/)[0].toLowerCase())).size;
+  const normalizedIdeas = ideas.map((idea) => idea.toLowerCase());
+  const uniqueWords = new Set(normalizedIdeas.join(' ').match(/[а-яёa-z0-9-]{4,}/gi) || []);
+  const domains = ['игр', 'медицин', 'космос', 'обуч', 'искусств', 'музык', 'театр', 'датчик', 'реабилитац', 'поход'];
+  const domainMatches = domains.filter((domain) => normalizedIdeas.some((idea) => idea.includes(domain))).length;
   const avgLength = ideas.join(' ').length / Math.max(ideas.length, 1);
-  const score = Math.max(1, Math.min(10, Math.round(5 + Math.min(variety, 3) + Math.min(avgLength / 80, 2))));
+  const repetitionPenalty = uniqueWords.size < ideas.length * 3 ? 2 : 0;
+  const rawScore = 3 + Math.min(uniqueWords.size / 4, 3) + Math.min(domainMatches, 3) + Math.min(avgLength / 120, 1.5) - repetitionPenalty;
+  const score = Math.max(1, Math.min(10, Math.round(rawScore)));
   return {
     score,
     summary: `Идеи для слова «${word}» понятны и уже дают несколько направлений применения.`,
@@ -75,4 +80,4 @@ async function getHint(word) {
   }
 }
 
-module.exports = { evaluateIdeas, getHint };
+module.exports = { evaluateIdeas, getHint, callProvider, loadConfig, safeEvaluation };
