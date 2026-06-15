@@ -6,10 +6,14 @@ const hintEl = document.querySelector('#hint');
 const statsEl = document.querySelector('#stats');
 const historyEl = document.querySelector('#history');
 const newWordBtn = document.querySelector('#new-word-btn');
+const timerEl = document.querySelector('#timer');
 const checkBtn = document.querySelector('#check-btn');
 const hintBtn = document.querySelector('#hint-btn');
 
 let currentWord = '';
+let timerId = null;
+let isRoundActive = false;
+const ROUND_SECONDS = 60;
 
 function setMessage(text, type = '') {
   messageEl.textContent = text;
@@ -35,14 +39,80 @@ async function api(path, options = {}) {
   return data;
 }
 
-async function loadWord() {
-  setMessage('Загружаем слово...');
-  const data = await api('/api/word');
-  currentWord = data.word;
-  currentWordEl.textContent = currentWord;
-  resultEl.classList.add('hidden');
-  hintEl.classList.add('hidden');
-  setMessage('');
+function setTaskControlsEnabled(isEnabled) {
+  checkBtn.disabled = !isEnabled;
+  hintBtn.disabled = !isEnabled;
+  ideasInput.disabled = !isEnabled;
+}
+
+function stopTimer() {
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+}
+
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
+
+function updateTimer(secondsLeft) {
+  timerEl.textContent = `Осталось времени: ${formatTime(secondsLeft)}`;
+}
+
+function startAnswerTimer() {
+  stopTimer();
+  isRoundActive = true;
+  let secondsLeft = ROUND_SECONDS;
+  updateTimer(secondsLeft);
+
+  timerId = setInterval(() => {
+    secondsLeft -= 1;
+    updateTimer(secondsLeft);
+
+    if (secondsLeft <= 0) {
+      stopTimer();
+      isRoundActive = false;
+      ideasInput.disabled = true;
+      hintBtn.disabled = true;
+      checkBtn.disabled = false;
+      newWordBtn.textContent = 'Начать заново';
+      timerEl.textContent = 'Время вышло — можно отправить ответы на проверку.';
+      setMessage('Время вышло. Проверьте ответы или начните заново.', 'error');
+    }
+  }, 1000);
+}
+
+async function startRound() {
+  stopTimer();
+  setTaskControlsEnabled(false);
+  newWordBtn.disabled = true;
+  currentWord = '';
+  currentWordEl.textContent = '—';
+  timerEl.textContent = 'Загружаем слово...';
+  setMessage('Готовим задание...');
+
+  try {
+    const data = await api('/api/word');
+    currentWord = data.word;
+    currentWordEl.textContent = currentWord;
+    ideasInput.value = '';
+    resultEl.classList.add('hidden');
+    hintEl.classList.add('hidden');
+    hintEl.innerHTML = '';
+    setTaskControlsEnabled(true);
+    newWordBtn.textContent = 'Начать заново';
+    setMessage('Таймер запущен — пишите ответы.');
+    startAnswerTimer();
+  } catch (error) {
+    currentWordEl.textContent = '—';
+    timerEl.textContent = 'Нажмите «Начать», чтобы попробовать снова.';
+    setMessage(error.message, 'error');
+  } finally {
+    newWordBtn.disabled = false;
+  }
 }
 
 function escapeHtml(value) {
@@ -104,7 +174,7 @@ async function refreshDashboard() {
 async function checkIdeas() {
   const ideas = ideasFromInput();
   if (!currentWord) {
-    setMessage('Сначала получите слово.', 'error');
+    setMessage('Сначала нажмите «Начать».', 'error');
     return;
   }
   if (ideas.length < 3) {
@@ -121,17 +191,23 @@ async function checkIdeas() {
     });
     renderResult(data.attempt);
     await refreshDashboard();
+    stopTimer();
+    isRoundActive = false;
+    setTaskControlsEnabled(false);
+    currentWord = '';
+    newWordBtn.textContent = 'Начать заново';
+    timerEl.textContent = 'Раунд завершён.';
     setMessage('Готово! Результат сохранён в историю.', 'success');
   } catch (error) {
     setMessage(error.message, 'error');
   } finally {
-    checkBtn.disabled = false;
+    checkBtn.disabled = !currentWord;
   }
 }
 
 async function requestHint() {
   if (!currentWord) {
-    setMessage('Сначала получите слово.', 'error');
+    setMessage('Сначала нажмите «Начать».', 'error');
     return;
   }
 
@@ -152,9 +228,9 @@ async function requestHint() {
   }
 }
 
-newWordBtn.addEventListener('click', loadWord);
+newWordBtn.addEventListener('click', startRound);
 checkBtn.addEventListener('click', checkIdeas);
 hintBtn.addEventListener('click', requestHint);
 
-loadWord().catch((error) => setMessage(error.message, 'error'));
+setTaskControlsEnabled(false);
 refreshDashboard().catch((error) => setMessage(error.message, 'error'));
