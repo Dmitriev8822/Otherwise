@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Иначе — тренировка креативности</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="hero card">
+        <p class="eyebrow">MVP проекта</p>
+        <h1>Иначе</h1>
+        <p class="subtitle">Придумай нестандартные способы применения обычного предмета и получи короткую оценку ИИ.</p>
+      </section>
+
+      <section class="card task-card">
+        <div class="word-row">
+          <div>
+            <span class="label">Текущее слово</span>
+            <h2 id="current-word">—</h2>
+          </div>
+          <button id="new-word-btn" type="button">Новое слово</button>
+        </div>
+
+        <label class="label" for="ideas-input">Минимум 3 идеи, каждая с новой строки</label>
+        <textarea id="ideas-input" rows="8" placeholder="Например:\nиспользовать как пресс\nсделать подставку\nпревратить в элемент игры"></textarea>
+
+        <div class="actions">
+          <button id="check-btn" type="button" class="primary">Проверить</button>
+          <button id="hint-btn" type="button">Подсказка</button>
+        </div>
+        <p id="message" class="message" role="status"></p>
+      </section>
+
+      <section id="result" class="card hidden"></section>
+      <section id="hint" class="card hidden"></section>
+
+      <section class="grid">
+        <div class="card">
+          <h2>Статистика</h2>
+          <div id="stats" class="stats"></div>
+        </div>
+        <div class="card">
+          <h2>История</h2>
+          <div id="history" class="history"></div>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

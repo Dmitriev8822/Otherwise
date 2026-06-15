@@ -1,0 +1,19 @@
+{
+  "name": "otherwise-mvp",
+  "version": "1.0.0",
+  "description": "MVP веб-приложения для тренировки креативного мышления \"Иначе\".",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
+  },
+  "keywords": ["creativity", "ai", "mvp"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
